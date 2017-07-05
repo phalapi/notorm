@@ -250,17 +250,15 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                 round(($debugTrace['endTime'] - $debugTrace['startTime']) * 1000, 2), 
                 $debugTrace['sql']
             );
-            // TODO 待解耦
-            \PhalApi\DI()->tracer->sql($sqlInfo);
+
+            if ($this->notORM->debugTimer) {
+                call_user_func_array($this->notORM->debugTimer, array($sqlInfo));
+            }
         }
 
         //显式抛出异常，以让开发同学尽早发现SQL语法问题 @dogstar 20150426
         if($return === false && $errorMessage !== null){
             throw new PDOException($errorMessage);
-        }
-
-        if($this->notORM->debugTimer){
-            call_user_func($this->notORM->debugTimer);
         }
 
         return $return;
