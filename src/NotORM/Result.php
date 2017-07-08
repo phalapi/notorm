@@ -251,7 +251,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                 $debugTrace['sql']
             );
 
-            if ($this->notORM->debugTimer) {
+            if ($this->notORM->debugTimer && is_callable($this->notORM->debugTimer)) {
                 call_user_func_array($this->notORM->debugTimer, array($sqlInfo));
             }
         }
