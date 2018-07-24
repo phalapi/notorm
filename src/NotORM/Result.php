@@ -1112,4 +1112,53 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
         }
     }
 
+    /**
+     * 获取当前PDO连接
+     * @return \PDO
+     */
+    function getConn()
+    {
+        return $this->notORM->connection;
+    }
+
+    /**
+     * Execute an SQL statement and return the number of affected rows
+     * @param string $query
+     * @return int|false
+     */
+    function exec($query)
+    {
+        $conn = $this->getConn();
+        $sql = $conn->quote($query);
+        return $conn->exec($sql);
+    }
+
+    /** ------------------ 事务操作 ------------------ **/
+
+    /**
+     * 开启数据库事务
+     * @return bool
+     */
+    public function beginTransaction()
+    {
+        return $this->getConn()->beginTransaction();
+    }
+
+    /**
+     * 提交数据库事务
+     * @return bool
+     */
+    public function commit()
+    {
+        return $this->getConn()->commit();
+    }
+
+    /**
+     * 回滚数据库事务
+     * @return bool
+     */
+    public function rollBack()
+    {
+        return $this->getConn()->rollBack();
+    }    
 }
