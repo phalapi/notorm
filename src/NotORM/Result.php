@@ -294,6 +294,22 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
         return $this->notORM->connection->quote($val);
     }
 
+    /**
+     * 执行带结果的原生sql，可用于插入、更新、删除等执行性的语句 @dogstar 20190329
+     *
+     * @param $sql        string
+     * @param $parameters   array
+     *
+     * @return int number of affected rows or false in case of an error
+     */
+    function excuteSql($sql, $parameters = array()) {
+        $return = $this->query($sql, $parameters);
+        if(!$return){
+            return false;
+        }
+        return $return->rowCount();
+    }
+
     /** Shortcut for call_user_func_array(array($this, 'insert'), $rows)
      *
      * @param array $rows 待批量添加的数据
