@@ -438,6 +438,23 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
     }
 
     /**
+     * 更新计数器，更友好的+1或-1或更新计数器的操作
+     *
+     * @param string $column
+     * @param int/float $number
+     *
+     @ return int number of affected rows or false in case of an error 
+     */
+    function updateCounters($column, $number = 1) {
+        $data = array(
+            $column => new NotORM_Literal(
+                sprintf('%s %s %s', $column, $number >= 0 ? '+' : '-', abs($number))
+            )
+        );
+        return $this->update($data);
+    }
+
+    /**
      * 获取数据库字段的引号
      * @author dogstar 20170617
      */
