@@ -187,8 +187,8 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                 if($parameters){
                     $debug .= " -- " . implode(", ", array_map(array($this, 'quote'), $parameters));
                 }
-                $preBacktrace = [];
-                $findBacktrace = [];
+                $preBacktrace = array();
+                $findBacktrace = array();
                 foreach(debug_backtrace() as $backtrace){
                     // 排除框架本身的
                     if (isset($backtrace['class']) && !in_array($backtrace['class'], array('NotORM_Result', 'PhalApi\Model\NotORMModel'))) {
