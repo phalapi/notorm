@@ -219,12 +219,11 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                 // @dogstar 20190523 更细致的SQL上下文信息
                 $debugTrace['sql'] = $debug;
                 if (!empty($findBacktrace)) {
-                    $debugTrace['sql'] = sprintf('%s(%s):    %s%s    %s%s    %s',
+                    $debugTrace['sql'] = sprintf('%s(%s):    %s%s    %s    %s',
                         isset($findBacktrace['file'])       ? $findBacktrace['file']            : (isset($preBacktrace['file']) ? $preBacktrace['file'] : '__index.php'),   // 在哪个文件
                         isset($findBacktrace['line'])       ? $findBacktrace['line']            : (isset($preBacktrace['line']) ? $preBacktrace['line'] : 0),               // 在哪一行
                         isset($findBacktrace['class'])      ? $findBacktrace['class'] . '::'    : '',              // 在哪个类
                         isset($findBacktrace['function'])   ? $findBacktrace['function'] . '()' : '__main()',      // 在哪个方法
-                        $this->notORM->dbName ? $this->notORM->dbName . '.' : '',                                  // 在哪个数据库
                         $this->table,                                                                              // 针对哪个表
                         $debug                                                                                     // 执行了什么SQL
                     );
@@ -378,7 +377,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                 $values[] = $this->quote($value);
                 foreach($value as $val){
                     if($val instanceof NotORM_Literal && $val->parameters){
-                        $parameters = array_merge($parameters, $val->parameters);
+                        $parameters = $this->mergeLiteralParamaters($parameters, $val->parameters);
                     }
                 }
             }
@@ -459,7 +458,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
             // doesn't use binding because $this->parameters can be filled by ? or :name
             $values[] = "{$quoteChar}{$key}{$quoteChar} = " . $this->quote($val);
             if($val instanceof NotORM_Literal && $val->parameters){
-                $parameters = array_merge($parameters, $val->parameters);
+                $parameters = $this->mergeLiteralParamaters($parameters, $val->parameters);
             }
         }
         if($this->parameters){
@@ -507,6 +506,14 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
         return new NotORM_Literal(
             sprintf('%s %s %s', $column, $number >= 0 ? '+' : '-', abs($number))
         );
+    }
+
+    /**
+     * 合并NotORM_Literal的参数，让其支持:name的参数绑定方式
+     */
+    protected function mergeLiteralParamaters($parameters, $literalParamaters) {
+        $mergeArr = isset($literalParamaters[0]) && is_array($literalParamaters[0]) ? $literalParamaters[0] : $literalParamaters;
+        return array_merge($parameters, $mergeArr);
     }
 
     /**
@@ -908,7 +915,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                 $this->having
             ), $this->order, $this->unionOrder) as $val){
                 if(($val instanceof NotORM_Literal || $val instanceof self) && $val->parameters){
-                    $parameters = array_merge($parameters, $val->parameters);
+                    $parameters = $this->mergeLiteralParamaters($parameters, $val->parameters);
                 }
             }
             try{
