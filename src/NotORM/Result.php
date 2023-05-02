@@ -284,9 +284,9 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
         if($this->notORM->debug){
             $debugTrace['endTime'] = microtime(true);
 
-            $sqlInfo = sprintf("[#%s - %sms - SQL]%s", 
-                self::$queryTimes, 
-                round(($debugTrace['endTime'] - $debugTrace['startTime']) * 1000, 2), 
+            $sqlInfo = sprintf("[#%s - %sms - SQL]%s",
+                self::$queryTimes,
+                round(($debugTrace['endTime'] - $debugTrace['startTime']) * 1000, 2),
                 $debugTrace['sql']
             );
 
@@ -387,7 +387,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
 
             //! driver specific extended insert
             $insert = ($data || $this->notORM->driver == "mysql")
-                ? "({$quoteChar}" . implode("{$quoteChar}, {$quoteChar}", array_keys($data)) . "{$quoteChar}) VALUES " . implode(", ", $values) 
+                ? "({$quoteChar}" . implode("{$quoteChar}, {$quoteChar}", array_keys($data)) . "{$quoteChar}) VALUES " . implode(", ", $values)
                 : "DEFAULT VALUES";
         }
 
@@ -479,7 +479,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      * @param string $column
      * @param int/float $number
      *
-     @ return int number of affected rows or false in case of an error 
+     @ return int number of affected rows or false in case of an error
      */
     function updateCounter($column, $number = 1) {
         return $this->update(array($column => $this->createLiteral($column, $number)));
@@ -490,14 +490,14 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      *
      * @param array $data
      *
-     @ return int number of affected rows or false in case of an error 
+     @ return int number of affected rows or false in case of an error
      */
     function updateMultiCounters(array $data) {
         $updateData = array();
 
         // 转换
         foreach ($data as $column => $number) {
-            $updateData[$column] = $this->createLiteral($column, $number); 
+            $updateData[$column] = $this->createLiteral($column, $number);
         }
 
         return $this->update($updateData);
@@ -1270,13 +1270,13 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
     public function rollBack()
     {
         return $this->getConn()->rollBack();
-    }    
+    }
 
     /** ------------------ 关联查询 @dogstar 20200226 ------------------ **/
 
     /**
      * 当前表的别名，当进行关联查询时需要提前设置
-     * @param $aliasTableName 当前表的别名
+     * @param string $aliasTableName 当前表的别名
      */
     public function alias($aliasTableName) {
         $this->aliasTableName = $aliasTableName;
