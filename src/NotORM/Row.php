@@ -63,7 +63,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	* @param NotORM_Row or null
 	* @return null
 	*/
-	function __set($name, NotORM_Row $value = null) {
+	function __set($name, ?NotORM_Row $value = null) {
 		$column = $this->result->notORM->structure->getReferencedColumn($name, $this->result->table);
 		$this[$column] = $value;
 	}
@@ -128,6 +128,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	
 	// IteratorAggregate implementation
 	
+	#[\ReturnTypeWillChange]
 	function getIterator() {
 		$this->access(null);
 		return new ArrayIterator($this->row);
@@ -135,6 +136,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	
 	// Countable implementation
 	
+	#[\ReturnTypeWillChange]
 	function count() {
 		return count($this->row);
 	}
@@ -145,6 +147,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	* @param string column name
 	* @return bool
 	*/
+	#[\ReturnTypeWillChange]
 	function offsetExists($key) {
 		$this->access($key);
 		$return = array_key_exists($key, $this->row);
@@ -158,6 +161,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	* @param string column name
 	* @return string
 	*/
+	#[\ReturnTypeWillChange]
 	function offsetGet($key) {
 		$this->access($key);
 		if (!array_key_exists($key, $this->row)) {
@@ -170,6 +174,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	* @param string column name
 	* @return null
 	*/
+	#[\ReturnTypeWillChange]
 	function offsetSet($key, $value) {
 		$this->row[$key] = $value;
 		$this->modified[$key] = $value;
@@ -179,6 +184,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	* @param string column name
 	* @return null
 	*/
+	#[\ReturnTypeWillChange]
 	function offsetUnset($key) {
 		unset($this->row[$key]);
 		unset($this->modified[$key]);
@@ -186,6 +192,7 @@ class NotORM_Row extends NotORM_Abstract implements IteratorAggregate, ArrayAcce
 	
 	// JsonSerializable implementation
 	
+	#[\ReturnTypeWillChange]
 	function jsonSerialize() {
 		return $this->row;
 	}

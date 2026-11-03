@@ -740,8 +740,8 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
             case "OR":
                 return $this->whereOperator($operator, $args);
         }
-        trigger_error("Call to undefined method NotORM_Result::$name()", E_USER_ERROR);
-        return FALSE;
+        // PHP 8.4 起 trigger_error(..., E_USER_ERROR) 已弃用，改为抛异常
+        throw new \BadMethodCallException("Call to undefined method NotORM_Result::$name()");
     }
 
     /** Shortcut for where()
@@ -877,6 +877,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      *
      * @return int
      */
+    #[\ReturnTypeWillChange]
     function count($column = "*"){
         return $this->aggregation("COUNT($column)");
     }
@@ -1125,6 +1126,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
 
     // Iterator implementation (not IteratorAggregate because $this->data can be changed during iteration)
 
+    #[\ReturnTypeWillChange]
     function rewind(){
         $this->execute();
         $this->keys = array_keys($this->data);
@@ -1132,19 +1134,23 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
     }
 
     /** @return NotORM_Row */
+    #[\ReturnTypeWillChange]
     function current(){
         return $this->data[current($this->keys)];
     }
 
     /** @return string row ID */
+    #[\ReturnTypeWillChange]
     function key(){
         return current($this->keys);
     }
 
+    #[\ReturnTypeWillChange]
     function next(){
         next($this->keys);
     }
 
+    #[\ReturnTypeWillChange]
     function valid(){
         return current($this->keys) !== false;
     }
@@ -1158,6 +1164,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      * @return bool
      *
      */
+    #[\ReturnTypeWillChange]
     function offsetExists($key){
         $row = $this->offsetGet($key);
         return isset($row);
@@ -1169,6 +1176,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      *
      * @return NotORM_Row or null if there is no such row
      */
+    #[\ReturnTypeWillChange]
     function offsetGet($key){
         if($this->single && !isset($this->data)){
             $clone = clone $this;
@@ -1205,6 +1213,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      * @param NotORM_Row $value
      *
      */
+    #[\ReturnTypeWillChange]
     function offsetSet($key, $value){
         $this->execute();
         $this->data[$key] = $value;
@@ -1215,6 +1224,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      * @param string $key row ID
      *
      */
+    #[\ReturnTypeWillChange]
     function offsetUnset($key){
         $this->execute();
         unset($this->data[$key]);
@@ -1222,6 +1232,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
 
     // JsonSerializable implementation
 
+    #[\ReturnTypeWillChange]
     function jsonSerialize(){
         $this->execute();
         if($this->notORM->jsonAsArray){

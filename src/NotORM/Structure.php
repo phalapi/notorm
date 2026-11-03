@@ -112,7 +112,7 @@ class NotORM_Structure_Discovery implements NotORM_Structure {
 	* @param NotORM_Cache
 	* @param string use "%s_id" to access $name . "_id" column in $row->$name
 	*/
-	function __construct(PDO $connection, NotORM_Cache $cache = null, $foreign = '%s') {
+	function __construct(PDO $connection, ?NotORM_Cache $cache = null, $foreign = '%s') {
 		$this->connection = $connection;
 		$this->cache = $cache;
 		$this->foreign = $foreign;
