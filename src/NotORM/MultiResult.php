@@ -101,6 +101,7 @@ class NotORM_MultiResult extends NotORM_Result {
 		}
 	}
 	
+	#[\ReturnTypeWillChange]
 	function count($column = "") {
 		$return = parent::count($column);
 		return (isset($return) ? $return : 0);
