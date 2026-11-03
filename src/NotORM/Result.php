@@ -89,7 +89,12 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
 
         $return .= $this->limitString($this->limit, $this->offset);
         if(isset($this->lock)){
-            $return .= ($this->lock ? " FOR UPDATE" : " LOCK IN SHARE MODE");
+            // Oracle 下 FOR UPDATE 必须位于最外层查询，不能被 ROWNUM 分页子查询包裹，
+            // 因此 oci 不在 whereString() 内追加，改由 __toString() 在最终 SQL 外层统一追加；
+            // 其余驱动保持原行为（FOR UPDATE / LOCK IN SHARE MODE）
+            if($this->notORM->driver != "oci"){
+                $return .= ($this->lock ? " FOR UPDATE" : " LOCK IN SHARE MODE");
+            }
         }
         return $return;
     }
@@ -163,6 +168,16 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
             $top = $this->topString($this->unionLimit);
             if($top){
                 $return = "SELECT$top * FROM ($return) t";
+            } elseif ($this->notORM->driver == "oci" && isset($this->unionLimit) && $this->unionLimit > 0) {
+                // Oracle 对 UNION 结果集分页：用 ROWNUM 嵌套子查询包裹整个 union
+                $offset = (int)$this->unionOffset;
+                $limit  = (int)$this->unionLimit;
+                $maxRow = $offset + $limit;
+                $minRow = $offset;
+                $return = "SELECT * FROM (SELECT inner_tab.*, ROWNUM AS rn__ FROM ("
+                        . $return
+                        . ") inner_tab WHERE ROWNUM <= " . $maxRow
+                        . ") WHERE rn__ > " . $minRow;
             }
         } else {
             // Oracle 分页：用 ROWNUM 嵌套子查询实现，兼容 11g/12c/19c，
@@ -177,6 +192,11 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                         . ") inner_tab WHERE ROWNUM <= " . $maxRow
                         . ") WHERE rn__ > " . $minRow;
             }
+        }
+        // Oracle 最外层 FOR UPDATE（oci 下不在 whereString 内追加，避免被 ROWNUM 子查询包裹）；
+        // 注：Oracle 不支持在 UNION 结果集上 FOR UPDATE，故仅非 union 场景追加
+        if ($this->notORM->driver == "oci" && !$this->union && isset($this->lock) && $this->lock) {
+            $return .= " FOR UPDATE";
         }
         return $return;
     }
@@ -966,8 +986,9 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                             $this->access[$this->primary] = true;
                         }
                     }
-                    // Oracle ROWNUM 分页会在结果集中多出 rn__ 列，在此剔除，避免污染返回数据
-                    if ($this->notORM->driver == "oci" && isset($this->limit) && $this->limit > 0) {
+                    // Oracle ROWNUM 分页会在结果集中多出 rn__ 列（普通分页与 union 分页均会产生），
+                    // 在此剔除，避免污染返回数据
+                    if ($this->notORM->driver == "oci" && isset($row['rn__'])) {
                         unset($row['rn__']);
                     }
                     //$this->rows[$key] = new $this->notORM->rowClass($row, $this);
