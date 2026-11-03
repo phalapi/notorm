@@ -54,6 +54,7 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
 
     protected function limitString($limit, $offset = null){
         $return = "";
+        // Oracle 分页由 __toString() 用 ROWNUM 子查询实现，oci 不在此生成分页子句
         if(isset($limit) && $this->notORM->driver != "oci" && $this->notORM->driver != "dblib" && $this->notORM->driver != "mssql" && $this->notORM->driver != "sqlsrv"){
             $return .= " LIMIT $limit";
             if($offset){
@@ -82,10 +83,6 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
         $return = $this->removeExtraDots($return);
 
         $where = $this->where;
-        if(isset($this->limit) && $this->notORM->driver == "oci"){
-            $where[] = ($where ? " AND " : "") . "(" . ($this->offset ? "rownum > $this->offset AND "
-                    : "") . "rownum <= " . ($this->limit + $this->offset) . ")"; //! rownum > doesn't work - requires subselect (see adminer/drivers/oracle.inc.php)
-        }
         if($where){
             $return = " WHERE " . implode($where) . $return;
         }
@@ -166,6 +163,19 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
             $top = $this->topString($this->unionLimit);
             if($top){
                 $return = "SELECT$top * FROM ($return) t";
+            }
+        } else {
+            // Oracle 分页：用 ROWNUM 嵌套子查询实现，兼容 11g/12c/19c，
+            // 不依赖 OFFSET/FETCH（后者必须配合 ORDER BY，且 11g 不支持）
+            if ($this->notORM->driver == "oci" && isset($this->limit) && $this->limit > 0) {
+                $offset = (int)$this->offset;
+                $limit  = (int)$this->limit;
+                $maxRow = $offset + $limit;
+                $minRow = $offset;
+                $return = "SELECT * FROM (SELECT inner_tab.*, ROWNUM AS rn__ FROM ("
+                        . $return
+                        . ") inner_tab WHERE ROWNUM <= " . $maxRow
+                        . ") WHERE rn__ > " . $minRow;
             }
         }
         return $return;
@@ -812,7 +822,9 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
      * @param int $perpage 每页多少条
      */
     function page($page = 1, $perpage = 100) {
-        return $this->limit(($page - 1) * $perpage, $perpage);
+        // Oracle 分页 limit($limit, $offset)：先传条数再传偏移量；
+        // 首页 limit(0, ...) 会被 $limit>0 守卫误杀，故把 perpage 放在前
+        return $this->limit($perpage, ($page - 1) * $perpage);
     }
 
     /** Set group clause, more calls rewrite old values
@@ -953,6 +965,10 @@ class NotORM_Result extends NotORM_Abstract implements Iterator, ArrayAccess, Co
                         if(!is_string($this->access)){
                             $this->access[$this->primary] = true;
                         }
+                    }
+                    // Oracle ROWNUM 分页会在结果集中多出 rn__ 列，在此剔除，避免污染返回数据
+                    if ($this->notORM->driver == "oci" && isset($this->limit) && $this->limit > 0) {
+                        unset($row['rn__']);
                     }
                     //$this->rows[$key] = new $this->notORM->rowClass($row, $this);
                     if ($this->notORM->isKeepPrimaryKeyIndex) {
